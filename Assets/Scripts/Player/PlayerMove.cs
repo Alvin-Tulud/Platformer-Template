@@ -1,55 +1,68 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class PlayerMove : MonoBehaviour
 {
-    private Rigidbody2D rigidbody;
-    private Vector3 playerVelocity;
-    private bool groundedPlayer;
+    private Rigidbody2D rb;
+    private bool holdMove;
+    private float direction;
     public LayerMask groundLayers;
     public float playerSpeed = 2.0f;
     public float jumpHeight = 1.0f;
-    public float gravityValue = -9.81f;
+    public float gravityScale = 1.0f;
+    private const float gravityValue = -9.81f;
 
     private void Start()
     {
-        rigidbody = GetComponent<Rigidbody2D>();
+        rb = GetComponent<Rigidbody2D>();
     }
 
-    void Update()
+    void FixedUpdate()
     {
-        groundedPlayer = isGrounded();
-        if (groundedPlayer && playerVelocity.y < 0)
+        if (holdMove)
         {
-            playerVelocity.y = 0f;
+            rb.linearVelocityX = playerSpeed * direction;
         }
 
-        Vector2 move = new Vector2(Input.GetAxis("Horizontal"), 0);
-        rigidbody.linearVelocity = move * Time.deltaTime * playerSpeed;
-
-        Debug.Log(move + " " + rigidbody.linearVelocity);
-
-        // Makes the player jump
-        if (Input.GetButtonDown("Jump") && groundedPlayer)
+        if (rb.linearVelocityX == 0)
         {
-            playerVelocity.y += Mathf.Sqrt(jumpHeight * 2.0f);
+            rb.linearVelocityX = 0;
         }
 
-        rigidbody.linearVelocityY += gravityValue * Time.deltaTime;
-        rigidbody.linearVelocity = playerVelocity * Time.deltaTime;
+        rb.linearVelocityY += gravityValue * gravityScale * Time.fixedDeltaTime;
     }
 
     private bool isGrounded()
     {
-        RaycastHit2D hitGround;
-        hitGround = Physics2D.CircleCast(Vector2.zero, 0.5f, Vector2.down, 0.1f, groundLayers);
+        RaycastHit2D onGround;
+        onGround = Physics2D.CircleCast(transform.position, 0.4f, Vector2.down, 0.2f, groundLayers);
 
-        if (hitGround)
+        if (onGround)
         {
             return true;
         }
 
         return false;
+    }
+
+    public void InputMove(InputAction.CallbackContext context)
+    {
+        if (context.started)
+        {
+            holdMove = true;
+            direction = Mathf.Floor(context.ReadValue<Vector2>().x);
+        }
+        else if (context.canceled)
+        {
+            holdMove = false;
+        }
+    }
+
+    public void InputJump(InputAction.CallbackContext context)
+    {
+        if (context.action.triggered && isGrounded())
+        {
+            rb.linearVelocityY = jumpHeight;
+        }
     }
 }
