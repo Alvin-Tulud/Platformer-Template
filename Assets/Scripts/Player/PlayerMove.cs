@@ -1,11 +1,8 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 public class PlayerMove : MonoBehaviour
 {
     private Rigidbody2D rb;
-    private bool holdMove;
-    private float direction;
     public LayerMask groundLayers;
     public float playerSpeed = 2.0f;
     public float jumpHeight = 1.0f;
@@ -19,10 +16,8 @@ public class PlayerMove : MonoBehaviour
 
     void FixedUpdate()
     {
-        if (holdMove)
-        {
-            rb.linearVelocityX = playerSpeed * direction;
-        }
+        InputMove();
+        InputJump();
 
         if (rb.linearVelocityX == 0)
         {
@@ -45,22 +40,21 @@ public class PlayerMove : MonoBehaviour
         return false;
     }
 
-    public void InputMove(InputAction.CallbackContext context)
+    public void InputMove()
     {
-        if (context.started)
+        if (Input.GetKey(KeyCode.D))
         {
-            holdMove = true;
-            direction = Mathf.Floor(context.ReadValue<Vector2>().x);
+            rb.linearVelocity = playerSpeed * Vector2.right;
         }
-        else if (context.canceled)
+        else if (Input.GetKey(KeyCode.A))
         {
-            holdMove = false;
+            rb.linearVelocity = playerSpeed * Vector2.left;
         }
     }
 
-    public void InputJump(InputAction.CallbackContext context)
+    public void InputJump()
     {
-        if (context.action.triggered && isGrounded())
+        if (Input.GetKey(KeyCode.Space) && isGrounded())
         {
             rb.linearVelocityY = jumpHeight;
         }
